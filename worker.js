@@ -11,8 +11,8 @@
 // bundler (esbuild) interops CommonJS/UMD modules into the ESM import below,
 // so no changes to provchart-core.js are needed.
 
-import { createClient } from '@supabase/supabase-js';
-import ProvChart from '../engine/provchart-core.js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import ProvChart from './provchart-core.js';
 
 const FREE_MAX_SERIES = 1;
 const PRO_MAX_SERIES = 12;
