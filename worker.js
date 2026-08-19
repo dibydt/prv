@@ -85,8 +85,7 @@ export default {
 
     async function getSubscription(userId) {
       const { data } = await supabase
-        .schema('provchart')
-        .from('subscriptions')
+        .from('provchart_subscriptions')
         .select('status, expires_at')
         .eq('user_id', userId)
         .maybeSingle();
@@ -98,7 +97,7 @@ export default {
 
     async function logUsage(userId, endpoint, chartType, seriesCount, pointsCount) {
       // Fire-and-forget-ish, but still awaited so failures don't silently vanish in logs.
-      const { error } = await supabase.schema('provchart').from('usage_logs').insert({
+      const { error } = await supabase.from('provchart_usage_logs').insert({
         user_id: userId,
         endpoint,
         chart_type: chartType,
@@ -203,7 +202,7 @@ export default {
 
       if ((eventType === 'charge.success' || eventType === 'subscription.create') && userId) {
         const plan = data?.metadata?.plan || 'pro';
-        const { error } = await supabase.schema('provchart').from('subscriptions').upsert(
+        const { error } = await supabase.from('provchart_subscriptions').upsert(
           {
             user_id: userId,
             status: 'active',
