@@ -218,8 +218,7 @@ export default {
 
       if ((eventType === 'subscription.disable' || eventType === 'subscription.not_renew') && userId) {
         const { error } = await supabase
-          .schema('provchart')
-          .from('subscriptions')
+          .from('provchart_subscriptions')
           .update({ status: 'inactive', updated_at: new Date().toISOString() })
           .eq('user_id', userId);
         if (error) console.error('subscription downgrade failed:', error.message);
