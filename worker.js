@@ -292,27 +292,34 @@ async function handleRequest(request, env, ctx) {
     return result;
   }
 
-  // ────────────────────────────────────────────────
-  // GET /api/v1/usage
-  // ────────────────────────────────────────────────
-  if (path === '/api/v1/usage' && request.method === 'GET') {
-    const apiKey = request.headers.get('X-API-Key') || 
-                   request.headers.get('Authorization')?.replace('Bearer ', '');
-    const user = await getUserFromApiKey(apiKey);
-    if (!user) return softError('Invalid or missing API key.', 401);
+// GET /api/v1/usage
+if (path === '/api/v1/usage' && request.method === 'GET') {
+  let user = null;
 
-    const sub = await getSubscription(user.id);
-    const used = await getMonthlyUsage(user.id);
-    const limit = PLAN_LIMITS[sub.plan]?.monthly || 0;
-
-    return jsonResponse({
-      plan: sub.plan,
-      used,
-      limit,
-      remaining: Math.max(0, limit - used),
-      month: getCurrentMonth(),
-    });
+  // Try API Key first
+  const apiKey = request.headers.get('X-API-Key') || 
+                 request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (apiKey?.startsWith('pc_live_')) {
+    user = await getUserFromApiKey(apiKey);
+  } else {
+    // Fallback to JWT (for dashboard)
+    user = await getUserFromJwt(request.headers.get('Authorization'));
   }
+
+  if (!user) return softError('Unauthorized', 401);
+
+  const sub = await getSubscription(user.id);
+  const used = await getMonthlyUsage(user.id);
+  const limit = PLAN_LIMITS[sub.plan]?.monthly || 0;
+
+  return jsonResponse({
+    plan: sub.plan,
+    used,
+    limit,
+    remaining: Math.max(0, limit - used),
+    month: getCurrentMonth(),
+  });
+}
 
   // ────────────────────────────────────────────────
   // API Keys management (requires JWT – from dashboard)
