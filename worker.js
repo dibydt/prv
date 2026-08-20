@@ -6,7 +6,7 @@ import ProvChart from './provchart-core.js';
 // Limits
 // ────────────────────────────────────────────────
 const PLAN_LIMITS = {
-  free:     { monthly: 0,    maxSeries: 1  },
+  free:     { monthly: 5,    maxSeries: 1  },
   pro:      { monthly: 500,  maxSeries: 12 },
   business: { monthly: 5000, maxSeries: 50 },
 };
@@ -259,11 +259,15 @@ async function handleRequest(request, env, ctx) {
     }
 
     const sub = await getSubscription(user.id);
+    
+    /* for now *
+    
     if (!sub.active || sub.plan === 'free') {
       return softError('This API is only available to Pro and Business users.', 403, {
         code: 'PLAN_REQUIRED',
       });
     }
+    */
 
     // Check monthly limit
     const used = await getMonthlyUsage(user.id);
@@ -292,7 +296,10 @@ async function handleRequest(request, env, ctx) {
     return result;
   }
 
-// GET /api/v1/usage
+  // ────────────────────────────────────────────────
+  // GET /api/v1/usage
+  // ────────────────────────────────────────────────
+  // GET /api/v1/usage
 if (path === '/api/v1/usage' && request.method === 'GET') {
   let user = null;
 
@@ -328,8 +335,11 @@ if (path === '/api/v1/usage' && request.method === 'GET') {
     const user = await getUserFromJwt(request.headers.get('Authorization'));
     if (!user) return softError('Unauthorized', 401);
 
-    const sub = await getSubscription(user.id);
-    if (!sub.active) return softError('Pro or Business plan required to create API keys.', 403);
+
+   const sub = await getSubscription(user.id);
+   // for now 
+   /* 
+    if (!sub.active) return softError('Pro or Business plan required to create API keys.', 403); */
 
     const body = await request.json().catch(() => ({}));
     const name = body.name || 'Default';
