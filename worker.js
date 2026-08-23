@@ -62,7 +62,7 @@ function timingSafeEqual(a, b) {
 
 function getCurrentMonth() {
   const d = new Date();
-  return `\( {d.getUTCFullYear()}- \){String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
 async function sha256(text) {
