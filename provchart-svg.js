@@ -59,7 +59,7 @@ function formatNumber(n) {
     const r = round(v);
     return r % 1 === 0 ? String(r) : String(r);
   };
-  if (abs >= 1e9) return sign + trim(abs / 1e12) + 'T';
+  if (abs >= 1e12) return sign + trim(abs / 1e12) + 'T';
   if (abs >= 1e9) return sign + trim(abs / 1e9) + 'B';
   if (abs >= 1e6) return sign + trim(abs / 1e6) + 'M';
   if (abs >= 1e3) return sign + trim(abs / 1e3) + 'k';
