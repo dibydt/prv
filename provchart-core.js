@@ -1,5 +1,5 @@
 /**
- * latest at 29/8/26
+ * latest at 31/8/26
  * ProvChart Core — Advanced CSS Chart Engine (ES Module)
  *
  * Supports: line, area, bar (vertical/horizontal), scatter, gauge, stat, and combo.
@@ -32,8 +32,16 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function xStops(n) {
-  if (n <= 1) return [0];
+// banded=false: edge-to-edge positions (first point at 0%, last at 100%) —
+// correct for line/area/scatter where a point should touch the plot edge.
+// banded=true: n evenly-sized bands, position = each band's center — correct
+// for bars, which need clearance on both sides so they don't bleed past the
+// plot edges (and, on the left, into the y-axis label column).
+function xStops(n, banded = false) {
+  if (n <= 1) return [50];
+  if (banded) {
+    return Array.from({ length: n }, (_, i) => round(((i + 0.5) / n) * 100));
+  }
   return Array.from({ length: n }, (_, i) => round((i / (n - 1)) * 100));
 }
 
@@ -48,7 +56,7 @@ function formatNumber(n) {
   const sign = n < 0 ? '-' : '';
   const abs = Math.abs(n);
   const trim = (v) => String(round(v));
-  if (abs >= 1e12) return sign + trim(abs / 1e12) + 'T';
+  if(abs >= 1e12) return sign + trim(abs / 1e12)+ 'T';
   if (abs >= 1e9) return sign + trim(abs / 1e9) + 'B';
   if (abs >= 1e6) return sign + trim(abs / 1e6) + 'M';
   if (abs >= 1e3) return sign + trim(abs / 1e3) + 'k';
@@ -244,7 +252,10 @@ function buildChart(config, type) {
   if (series.length === 0) throw new Error('At least one series is required.');
   const n = series[0].points.length;
   if (n === 0) throw new Error('Each series must have at least one point.');
-  const stops = xStops(n);
+  // Bars need banded (evenly-boxed) positions so they never bleed past the
+  // plot edges — line/area/scatter keep edge-to-edge positions.
+  const hasBar = series.some((s) => s.type === 'bar');
+  const stops = xStops(n, hasBar);
   const stacked = !!config.stacked;
   const range = computeRange(series, config, stacked);
 
