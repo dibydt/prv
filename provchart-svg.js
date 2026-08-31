@@ -34,8 +34,16 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function xStops(n, plotWidth) {
+// banded=false: edge-to-edge positions (first point at 0, last at plotWidth) —
+// correct for line/area/scatter where a point should touch the plot edge.
+// banded=true: n evenly-sized bands, position = each band's center — correct
+// for bars, which need clearance on both sides so they don't bleed past the
+// plot edges (and, on the left, into the y-axis label gutter).
+function xStops(n, plotWidth, banded = false) {
   if (n <= 1) return [plotWidth / 2];
+  if (banded) {
+    return Array.from({ length: n }, (_, i) => round(((i + 0.5) / n) * plotWidth));
+  }
   return Array.from({ length: n }, (_, i) => round((i / (n - 1)) * plotWidth));
 }
 
@@ -219,10 +227,9 @@ function yAxisLabels(frame, range) {
   return out;
 }
 
-function axisXLabels(frame, labels, n) {
+function axisXLabels(frame, labels, n, stops) {
   if (!frame.showAxisX) return '';
-  const { plotX, plotWidth, plotY, plotHeight, theme } = frame;
-  const stops = xStops(n, plotWidth);
+  const { plotX, plotY, plotHeight, theme } = frame;
   const y = round(plotY + plotHeight + 18);
   return labels
     .slice(0, n)
@@ -309,13 +316,12 @@ function renderScatter(frame, s, stops, range) {
     .join('');
 }
 
-function renderBars(frame, series, n, stacked, range) {
-  const { plotX, plotY, plotWidth, plotHeight } = frame;
-  const stops = xStops(n, plotWidth);
+function renderBars(frame, series, n, stacked, range, stops) {
+  const { plotX, plotY, plotHeight } = frame;
   const barSeries = series.filter((s) => s.type === 'bar');
   if (barSeries.length === 0) return '';
 
-  const groupWidth = (plotWidth / n) * 0.7;
+  const groupWidth = (frame.plotWidth / n) * 0.7;
   const baseline = plotY + plotHeight;
   const span = range.max - range.min;
   let out = '';
@@ -357,14 +363,17 @@ function buildLineFamily(config, forcedType) {
   const series = normalizeSeries(config, forcedType);
   const frame = buildFrame(config, series);
   const n = series[0].points.length;
-  const stops = xStops(n, frame.plotWidth);
+  // Bars need banded (evenly-boxed) positions so they never bleed past the
+  // plot edges — line/area/scatter keep edge-to-edge positions.
+  const hasBar = series.some((s) => s.type === 'bar');
+  const stops = xStops(n, frame.plotWidth, hasBar);
   const defs = [];
   const range = computeRange(series, config, !!config.stacked);
 
   let body = gridLines(frame);
   body += yAxisLabels(frame, range);
 
-  const bars = renderBars(frame, series, n, !!config.stacked, range);
+  const bars = renderBars(frame, series, n, !!config.stacked, range, stops);
   body += bars;
 
   series
@@ -379,7 +388,7 @@ function buildLineFamily(config, forcedType) {
       body += renderScatter(frame, s, stops, range);
     });
 
-  body += axisXLabels(frame, config.axisX || [], n);
+  body += axisXLabels(frame, config.axisX || [], n, stops);
   body += legendRow(frame, series);
 
   const defsBlock = defs.length ? `<defs>${defs.join('')}</defs>` : '';
@@ -518,3 +527,4 @@ export default {
   gauge: buildGauge,
   _internal: { xStops, escapeXml, uid, formatNumber, computeRange },
 };
+
