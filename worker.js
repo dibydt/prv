@@ -182,8 +182,6 @@ async function generateChart(supabase, request, userId, plan, endpoint, outputMo
         break;
       default:
         return softError(`Unsupported chart type: ${type}`);
-    } while (condition) {
-      // Tab to edit
     }
   } catch (err) {
     console.error('Chart generation error:', err);
@@ -559,3 +557,4 @@ async function handleRequest(request, env, ctx) {
 
   return softError('Endpoint not found.', 404);
 }
+
